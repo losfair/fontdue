@@ -82,6 +82,8 @@ pub struct LayoutSettings {
     /// The default is true. This option enables hard breaks, like new line characters, to
     /// prematurely wrap lines. If false, hard breaks will not prematurely create a new line.
     pub wrap_hard_breaks: bool,
+    /// The default is false.
+    pub skip_newlines: bool,
 }
 
 impl Default for LayoutSettings {
@@ -95,6 +97,7 @@ impl Default for LayoutSettings {
             vertical_align: VerticalAlign::Top,
             wrap_style: WrapStyle::Word,
             wrap_hard_breaks: true,
+            skip_newlines: false,
         }
     }
 }
@@ -238,6 +241,7 @@ pub struct Layout<U: Copy + Clone = ()> {
     current_px: f32,
     start_pos: f32,
     height: f32,
+    skip_newlines: bool,
 }
 
 impl<'a, U: Copy + Clone> Layout<U> {
@@ -269,6 +273,7 @@ impl<'a, U: Copy + Clone> Layout<U> {
             current_px: 0.0,
             start_pos: 0.0,
             height: 0.0,
+            skip_newlines: false,
         };
         layout.reset(&LayoutSettings::default());
         layout
@@ -303,6 +308,7 @@ impl<'a, U: Copy + Clone> Layout<U> {
                 HorizontalAlign::Right => 1.0,
             }
         };
+        self.skip_newlines = settings.skip_newlines;
         self.clear();
     }
 
@@ -394,6 +400,11 @@ impl<'a, U: Copy + Clone> Layout<U> {
                 });
                 self.start_pos = self.linebreak_pos;
             }
+
+            if character == '\n' && self.skip_newlines {
+                continue;
+            }
+
             let y = if self.flip {
                 floor(-metrics.bounds.height - metrics.bounds.ymin) // PositiveYDown
             } else {
